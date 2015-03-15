@@ -1,0 +1,172 @@
+﻿@{
+    ViewBag.Title = "Index";
+}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <script src="~/js/jquery.min.js"></script>
+    <script src="~/Scripts/jquery-ui-1.9.0.min.js"></script>
+    <script src="~/Scripts/jQuery.FileUpload/jquery.iframe-transport.js"></script>
+    <script src="~/js/jquery.Jcrop.js"></script>
+    <script src="~/Scripts/jQuery.FileUpload/jquery.fileupload.js"></script>
+    <link href="~/css/jquery.Jcrop.min.css" rel="stylesheet" />
+    <script type="text/javascript">
+
+        $(function () {
+
+            // Create variables (in this scope) to hold the API and image size
+            var boundx,
+                boundy,
+                jcrop,
+                // Grab some information about the preview pane
+                $pimg = $('#preview-pane .preview-container img'),
+                $pcontainer = $('#preview-pane .preview-container'),
+
+                xsize = $pcontainer.width(),
+                ysize = $pcontainer.height();
+
+
+
+            $('#UploadImage').fileupload({
+                autoUpload: false,
+                dataType: 'json',
+                add: function (e, data) {
+                    data.context = $('<button/>').text('Upload')
+                                    .appendTo(document.body)
+                                    .click(function () {
+                                        data.context = $('<p/>').text('Uploading...').replaceAll($(this));
+                                        data.submit();
+                                    });
+                },
+                done: function (e, data) {
+                    $.each(data.result.files, function (index, file) {
+                        $('<p/>').text(file.name).appendTo(document.body);
+                    });
+                }
+            });
+
+
+
+
+            function updatePreview(c) {
+                if (parseInt(c.w) > 0) {
+                    var rx = xsize / c.w;
+                    var ry = ysize / c.h;
+
+                    $pimg.css({
+                        width: Math.round(rx * boundx) + 'px',
+                        height: Math.round(ry * boundy) + 'px',
+                        marginLeft: '-' + Math.round(rx * c.x) + 'px',
+                        marginTop: '-' + Math.round(ry * c.y) + 'px'
+                    });
+                }
+            };
+            function updateCoords(c) {
+                $("#x").val(c.x);
+                $("#y").val(c.y);
+                $("#w").val(c.w);
+                $("#h").val(c.h);
+            };
+
+
+
+            $("#UploadImage").change(function () {
+                if (jcrop != null)
+                    jcrop.destroy();
+                var location = $(this).val();
+
+                var type = location.substr(location.lastIndexOf(".")).toLowerCase();
+                if (type == ".jpg" || type == ".gif" || type == ".jpeg" || type == ".bmp") {
+
+                    var img = document.getElementById('target');
+                    var previewImg = document.getElementById('preview');
+
+                    if (this.files && this.files[0]) {
+                        var reader = new FileReader();
+
+                        reader.onload = function (evt) {
+                            previewImg.src = evt.target.result;
+                            img.src = evt.target.result;
+
+                            $('#target').Jcrop({
+                                onChange: updatePreview,
+                                onSelect: updateCoords,
+                                aspectRatio: xsize / ysize
+                            }, function () {
+                                var bounds = this.getBounds();
+                                boundx = bounds[0];
+                                boundy = bounds[1];
+                                jcrop = this;
+                            });
+
+                        }
+                        reader.readAsDataURL(this.files[0]);
+                    }
+                    else //兼容IE
+                    {
+                        alert("请升级IE浏览器，或者使用火狐或者谷歌浏览");
+                    }
+                }
+                else {
+                    alert("图片格式不对！");
+
+                }
+            });
+
+        });
+
+
+    </script>
+    <style type="text/css">
+        /* Apply these styles only when #preview-pane has
+        been placed within the Jcrop widget */
+        #preview-pane {
+            padding: 6px;
+            border: 1px rgba(0,0,0,.4) solid;
+            background-color: white;
+            -webkit-border-radius: 6px;
+            -moz-border-radius: 6px;
+            border-radius: 6px;
+            -webkit-box-shadow: 1px 1px 5px 2px rgba(0, 0, 0, 0.2);
+            -moz-box-shadow: 1px 1px 5px 2px rgba(0, 0, 0, 0.2);
+            box-shadow: 1px 1px 5px 2px rgba(0, 0, 0, 0.2);
+            width: 200px;
+            height: 100px;
+        }
+
+            /* The Javascript code will set the aspect ratio of the crop
+        area based on the size of the thumbnail preview,
+        specified here */
+            #preview-pane .preview-container {
+                width: inherit;
+                height: inherit;
+                overflow: hidden;
+            }
+    </style>
+</head>
+<body>
+    <div id="preview-pane">
+        <div class="preview-container">
+            <img class="jcrop-preview" id="preview" />
+        </div>
+    </div>
+
+    <div id="source">
+        <img id="target" />
+    </div>
+
+    <form>
+        <input type="hidden" id="x" name="x" />
+        <input type="hidden" id="y" name="y" />
+        <input type="hidden" id="w" name="w" />
+        <input type="hidden" id="h" name="h" />
+
+        <input type="file" name="UploadImage" id="UploadImage" />
+    </form>
+
+
+</body>
+</html>
